@@ -7,7 +7,7 @@ import { useState, useEffect, createContext, useContext } from 'react';
 
 export type PageType = 'home' | 'search' | 'tool' | 'compare' | 'collections' | 'trending' | 'admin';
 
-interface RouteState {
+export interface RouteState {
   page: PageType;
   params: {
     slug?: string;

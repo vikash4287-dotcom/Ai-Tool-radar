@@ -23,7 +23,7 @@ export default function App() {
   const [dbTick, setDbTick] = useState(0);
 
   // Dynamically update head metadata, titles, descriptions, and OG tags
-  useHeadMetadata();
+  useHeadMetadata(route);
 
   // Sync state with live Firestore actions
   useEffect(() => {

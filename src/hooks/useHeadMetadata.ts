@@ -4,11 +4,10 @@
  */
 
 import { useEffect } from 'react';
-import { useRouter } from '../lib/router';
+import { RouteState } from '../lib/router';
 import { dbService } from '../lib/db';
 
-export function useHeadMetadata() {
-  const { route } = useRouter();
+export function useHeadMetadata(route: RouteState) {
 
   useEffect(() => {
     let title = 'AI Tools Radar | Discover the Best AI Tools & Alternatives';
