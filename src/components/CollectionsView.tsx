@@ -242,7 +242,9 @@ export default function CollectionsView() {
                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                       tool.pricing === 'Free' 
                         ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' 
-                        : 'bg-sky-50 text-sky-600 border border-sky-100'
+                        : tool.pricing === 'Freemium'
+                          ? 'bg-sky-50 text-sky-600 border border-sky-100'
+                          : 'bg-rose-50 text-rose-600 border border-rose-100'
                     }`}>
                       {tool.pricing}
                     </span>
@@ -493,7 +495,9 @@ export default function CollectionsView() {
                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                     tool.pricing === 'Free' 
                       ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' 
-                      : 'bg-sky-50 text-sky-600 border border-sky-100'
+                      : tool.pricing === 'Freemium'
+                        ? 'bg-sky-50 text-sky-600 border border-sky-100'
+                        : 'bg-rose-50 text-rose-600 border border-rose-100'
                   }`}>
                     {tool.pricing}
                   </span>

@@ -176,6 +176,15 @@ export default function TrendingView() {
                       <span className="text-[9px] font-mono font-bold uppercase text-slate-400 bg-slate-50 border border-slate-100 py-0.5 px-2 rounded">
                         {tool.category}
                       </span>
+                      <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
+                        tool.pricing === 'Free' 
+                          ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' 
+                          : tool.pricing === 'Freemium'
+                            ? 'bg-sky-50 text-sky-600 border border-sky-100'
+                            : 'bg-rose-50 text-rose-600 border border-rose-100'
+                      }`}>
+                        {tool.pricing}
+                      </span>
                     </div>
                     <p className="text-slate-500 text-xs mt-1 leading-relaxed line-clamp-1 max-w-sm sm:max-w-md lg:max-w-xl">
                       {tool.description}

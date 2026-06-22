@@ -22,7 +22,8 @@ import {
   ListTodo,
   Layers,
   Award,
-  BookOpen
+  BookOpen,
+  CreditCard
 } from 'lucide-react';
 
 export default function ToolDetailView() {
@@ -321,6 +322,84 @@ export default function ToolDetailView() {
 
           <div className="space-y-6">
             
+            {/* Pricing Insights Card */}
+            <div className="bg-white border border-slate-101 rounded-3xl p-6 space-y-4 shadow-sm relative overflow-hidden">
+              <div className={`absolute top-0 right-0 w-20 h-20 opacity-10 rounded-full blur-xl pointer-events-none ${
+                tool.pricing === 'Free' ? 'bg-emerald-500' : tool.pricing === 'Freemium' ? 'bg-sky-500' : 'bg-rose-500'
+              }`} />
+              <h4 className="font-extrabold text-slate-800 text-xs uppercase tracking-wider flex items-center space-x-2">
+                <span className="p-1 rounded-lg bg-indigo-50 text-indigo-600">
+                  <CreditCard className="h-3.5 w-3.5" />
+                </span>
+                <span>Pricing Insights</span>
+              </h4>
+              <div className="pt-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-slate-500 font-semibold">Pricing Model</span>
+                  <span className={`text-xs font-bold px-3 py-1 rounded-full border ${
+                    tool.pricing === 'Free'
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200 shadow-2xs'
+                      : tool.pricing === 'Freemium'
+                        ? 'bg-sky-50 text-sky-700 border-sky-200 shadow-2xs'
+                        : 'bg-rose-50 text-rose-700 border-rose-200 shadow-2xs'
+                  }`}>
+                    {tool.pricing}
+                  </span>
+                </div>
+                
+                <p className="text-slate-500 text-xs mt-3 leading-relaxed font-semibold bg-slate-50 p-3 rounded-xl border border-slate-100/50">
+                  {tool.pricing === 'Free' && "This tool is 100% free to use with no hidden premium subscriptions, payment thresholds, or credit limits."}
+                  {tool.pricing === 'Freemium' && "Hybrid pricing model. Offers free access tiers or complimentary daily credits, with paid upgrades for higher capacity or team features."}
+                  {tool.pricing === 'Paid' && "Commercial product requiring a monthly subscription or pay-per-use plan. Often includes a free trial duration for testing purposes."}
+                </p>
+
+                {/* Micro-meter for visual budget weight */}
+                <div className="mt-4 space-y-1.5">
+                  <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 font-bold uppercase tracking-wider">
+                    <span>Budget Profile</span>
+                    <span className={
+                      tool.pricing === 'Free' ? 'text-emerald-600' : tool.pricing === 'Freemium' ? 'text-sky-600' : 'text-rose-600'
+                    }>
+                      {tool.pricing === 'Free' ? 'Zero Cost' : tool.pricing === 'Freemium' ? 'Flexible / Low' : 'Premium Tier'}
+                    </span>
+                  </div>
+                  <div className="h-2 bg-slate-100 rounded-full overflow-hidden flex gap-0.5">
+                    <div className={`h-full rounded-l-full transition-all ${
+                      tool.pricing === 'Free' ? 'w-full bg-emerald-500' : 'w-1/3 bg-slate-200'
+                    }`} />
+                    <div className={`h-full transition-all ${
+                      tool.pricing === 'Freemium' ? 'w-2/3 bg-sky-500 animate-pulse' : tool.pricing === 'Free' ? 'w-0' : 'hidden'
+                    }`} />
+                    <div className={`h-full rounded-r-full transition-all ${
+                      tool.pricing === 'Paid' ? 'w-full bg-rose-500' : 'hidden'
+                    }`} />
+                  </div>
+                </div>
+
+                {/* Bullet details based on properties */}
+                <div className="mt-4 space-y-2 text-xs font-semibold">
+                  {tool.freePlan && (
+                    <div className="flex items-center space-x-2 text-emerald-700">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" />
+                      <span>Complimentary free plan available</span>
+                    </div>
+                  )}
+                  {tool.features.includes('Free Trial') && (
+                    <div className="flex items-center space-x-2 text-sky-700">
+                      <span className="h-1.5 w-1.5 rounded-full bg-sky-500 shrink-0" />
+                      <span>Offers a comprehensive Free Trial version</span>
+                    </div>
+                  )}
+                  {tool.features.includes('Open Source') && (
+                    <div className="flex items-center space-x-2 text-indigo-700">
+                      <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 shrink-0" />
+                      <span>Fully Open Source licensed project</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
             {/* Features list */}
             <div className="bg-white border border-slate-100 rounded-3xl p-6 space-y-4 shadow-xs">
               <h4 className="font-extrabold text-slate-800 text-xs uppercase tracking-wider">Available Features</h4>

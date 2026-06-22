@@ -408,8 +408,16 @@ export default function HomeView() {
               </div>
 
               <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400 font-mono">
-                <span className="font-semibold text-slate-500">{tool.pricing}</span>
-                <span className="text-indigo-600 text-[10px] uppercase font-semibold">View</span>
+                <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
+                  tool.pricing === 'Free' 
+                    ? 'bg-emerald-50 text-emerald-605 border border-emerald-100' 
+                    : tool.pricing === 'Freemium'
+                      ? 'bg-sky-50 text-sky-650 border border-sky-100'
+                      : 'bg-rose-50 text-rose-650 border border-rose-100'
+                }`}>
+                  {tool.pricing}
+                </span>
+                <span className="text-indigo-600 text-[10px] uppercase font-bold tracking-wider">Specs →</span>
               </div>
             </div>
           ))}
