@@ -7,6 +7,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from '../lib/router';
 import { dbService } from '../lib/db';
 import { AITool, Category, Collection } from '../types';
+import { auth } from '../lib/firebase';
+import { onAuthStateChanged, User } from 'firebase/auth';
 import { 
   Search, 
   TrendingUp, 
@@ -22,7 +24,8 @@ import {
   BookOpen,
   MousePointerClick,
   TrendingUp as TrendingIcon,
-  Crown
+  Crown,
+  Bookmark
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -40,9 +43,55 @@ export default function HomeView() {
   const [searchVal, setSearchVal] = useState('');
   const [suggestionIdx, setSuggestionIdx] = useState(0);
 
-  const tools = dbService.getTools();
+   const tools = dbService.getTools();
   const categories = dbService.getCategories();
   const collections = dbService.getCollections();
+
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [bookmarkedSlugs, setBookmarkedSlugs] = useState<string[]>([]);
+
+  // Listen to Auth & Bookmarked tools list sync
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, async (usr) => {
+      setCurrentUser(usr);
+      if (usr) {
+        try {
+          const list = await dbService.getBookmarks(usr.uid);
+          setBookmarkedSlugs(list);
+        } catch (e) {
+          console.warn('Could not sync user bookmarks lists:', e);
+        }
+      } else {
+        setBookmarkedSlugs([]);
+      }
+    });
+    return () => unsub();
+  }, []);
+
+  const handleToggleCardBookmark = async (e: React.MouseEvent, slug: string) => {
+    e.stopPropagation(); // Avoid triggering full-card click navigation
+    if (!currentUser) {
+      if (confirm('Create a free account or Sign In with Google to bookmark AI tools.')) {
+        try {
+          const res = await dbService.loginWithGoogle();
+          if (res.user) {
+            const added = await dbService.toggleBookmark(res.user.uid, slug);
+            setBookmarkedSlugs(prev => added ? [...prev, slug] : prev.filter(s => s !== slug));
+          }
+        } catch (err: any) {
+          alert(`Authentication failed: ${err.message || err}`);
+        }
+      }
+      return;
+    }
+
+    try {
+      const added = await dbService.toggleBookmark(currentUser.uid, slug);
+      setBookmarkedSlugs(prev => added ? [...prev, slug] : prev.filter(s => s !== slug));
+    } catch (err) {
+      console.error("Error toggling home card bookmark:", err);
+    }
+  };
 
   // Dynamic validation filter to hide suggest query strings if they return 0 matching listings
   const activeSuggestions = useMemo(() => {
@@ -242,11 +291,21 @@ export default function HomeView() {
               className="group relative bg-white border border-slate-100/80 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:shadow-indigo-500/10 hover:border-indigo-200 hover:-translate-y-1 hover:scale-[1.025] active:scale-[0.985] transition-all duration-300 cursor-pointer"
             >
               {tool.featured && (
-                <span className="absolute top-4 right-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[9px] font-bold uppercase py-0.5 px-2 rounded-full flex items-center space-x-0.5 shadow-sm">
+                <span className="absolute top-4 right-14 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[9px] font-bold uppercase py-0.5 px-2 rounded-full flex items-center space-x-0.5 shadow-sm z-10">
                   <Crown className="h-2.5 w-2.5" />
                   <span>Featured</span>
                 </span>
               )}
+
+              {/* Floating Bookmark Button */}
+              <button
+                type="button"
+                onClick={(e) => handleToggleCardBookmark(e, tool.slug)}
+                className="absolute top-4 right-4 p-1.5 rounded-lg text-slate-350 hover:text-rose-500 hover:bg-rose-50 transition-all z-10 bg-white/80 backdrop-blur-xs border border-slate-200 shadow-2xs hover:scale-105"
+                title={bookmarkedSlugs.includes(tool.slug) ? "Remove Bookmark" : "Save / Bookmark tool"}
+              >
+                <Bookmark className={`h-3.5 w-3.5 ${bookmarkedSlugs.includes(tool.slug) ? 'fill-rose-500 text-rose-500' : 'text-slate-400'}`} />
+              </button>
               
               <div className="flex items-center space-x-4">
                 <div className={`h-12 w-12 rounded-xl flex items-center justify-center text-white font-extrabold text-lg shadow ${tool.logo}`}>
@@ -391,10 +450,20 @@ export default function HomeView() {
             <div
               key={tool.id}
               onClick={() => navigate('tool', { slug: tool.slug })}
-              className="group bg-white border border-slate-150 hover:border-indigo-200 rounded-xl p-4 cursor-pointer hover:shadow-xl hover:shadow-indigo-500/10 hover:-translate-y-1 hover:scale-[1.03] active:scale-[0.97] transition-all duration-300 flex flex-col justify-between shadow-xs"
+              className="group relative bg-white border border-slate-150 hover:border-indigo-200 rounded-xl p-4 cursor-pointer hover:shadow-xl hover:shadow-indigo-500/10 hover:-translate-y-1 hover:scale-[1.03] active:scale-[0.97] transition-all duration-300 flex flex-col justify-between shadow-xs"
             >
+              {/* Floating Bookmark Button */}
+              <button
+                type="button"
+                onClick={(e) => handleToggleCardBookmark(e, tool.slug)}
+                className="absolute top-3 right-3 p-1 rounded-md text-slate-350 hover:text-rose-500 hover:bg-rose-50 transition-all z-10 bg-white border border-slate-150 shadow-2xs hover:scale-105"
+                title={bookmarkedSlugs.includes(tool.slug) ? "Remove Bookmark" : "Save / Bookmark tool"}
+              >
+                <Bookmark className={`h-3 w-3 ${bookmarkedSlugs.includes(tool.slug) ? 'fill-rose-500 text-rose-500' : 'text-slate-400'}`} />
+              </button>
+
               <div>
-                <div className="flex items-center space-x-2.5 mb-3">
+                <div className="flex items-center space-x-2.5 mb-3 select-none pr-4">
                   <div className={`h-8 w-8 rounded-lg flex items-center justify-center text-white text-xs font-bold ${tool.logo}`}>
                     {tool.name.charAt(0)}
                   </div>

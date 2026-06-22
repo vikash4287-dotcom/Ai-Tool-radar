@@ -3,10 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useRouter } from '../lib/router';
 import { dbService } from '../lib/db';
 import { AITool } from '../types';
+import { auth } from '../lib/firebase';
+import { onAuthStateChanged, User } from 'firebase/auth';
 import { 
   TrendingUp, 
   Sparkles, 
@@ -16,12 +18,59 @@ import {
   ChevronRight, 
   Award,
   Crown,
-  Play
+  Play,
+  Bookmark
 } from 'lucide-react';
 
 export default function TrendingView() {
   const { navigate } = useRouter();
   const tools = useMemo(() => dbService.getTools(), []);
+
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [bookmarkedSlugs, setBookmarkedSlugs] = useState<string[]>([]);
+
+  // Listen to Auth & Bookmarked tools list sync
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, async (usr) => {
+      setCurrentUser(usr);
+      if (usr) {
+        try {
+          const list = await dbService.getBookmarks(usr.uid);
+          setBookmarkedSlugs(list);
+        } catch (e) {
+          console.warn('Could not sync user bookmarks lists in TrendingView:', e);
+        }
+      } else {
+        setBookmarkedSlugs([]);
+      }
+    });
+    return () => unsub();
+  }, []);
+
+  const handleToggleCardBookmark = async (e: React.MouseEvent, slug: string) => {
+    e.stopPropagation(); // Avoid triggering full-card click navigation
+    if (!currentUser) {
+      if (confirm('Create a free account or Sign In with Google to bookmark AI tools.')) {
+        try {
+          const res = await dbService.loginWithGoogle();
+          if (res.user) {
+            const added = await dbService.toggleBookmark(res.user.uid, slug);
+            setBookmarkedSlugs(prev => added ? [...prev, slug] : prev.filter(s => s !== slug));
+          }
+        } catch (err: any) {
+          alert(`Authentication failed: ${err.message || err}`);
+        }
+      }
+      return;
+    }
+
+    try {
+      const added = await dbService.toggleBookmark(currentUser.uid, slug);
+      setBookmarkedSlugs(prev => added ? [...prev, slug] : prev.filter(s => s !== slug));
+    } catch (err) {
+      console.error("Error toggling trending card bookmark:", err);
+    }
+  };
 
   // Tabs layout: today, weekly, new, most-viewed
   const [activeTab, setActiveTab ] = useState<'today' | 'weekly' | 'new' | 'viewed'>('today');
@@ -192,9 +241,20 @@ export default function TrendingView() {
                   </div>
                 </div>
 
-                {/* Right side metric and chevron */}
+                {/* Right side metric, bookmark button and chevron */}
                 <div className="flex items-center space-x-4 shrink-0">
                   {getMetricLabel(tool, index)}
+                  
+                  {/* Bookmark Button */}
+                  <button
+                    type="button"
+                    onClick={(e) => handleToggleCardBookmark(e, tool.slug)}
+                    className="p-2 rounded-xl text-slate-350 hover:text-rose-500 hover:bg-rose-50 border border-slate-100 transition-all z-10 bg-white shadow-2xs hover:scale-105"
+                    title={bookmarkedSlugs.includes(tool.slug) ? "Remove Bookmark" : "Save / Bookmark tool"}
+                  >
+                    <Bookmark className={`h-4 w-4 ${bookmarkedSlugs.includes(tool.slug) ? 'fill-rose-500 text-rose-500' : 'text-slate-400'}`} />
+                  </button>
+
                   <ChevronRight className="h-4 w-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
                 </div>
 
