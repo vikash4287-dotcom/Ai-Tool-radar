@@ -7,6 +7,8 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useRouter } from '../lib/router';
 import { dbService } from '../lib/db';
 import { AITool } from '../types';
+import { auth } from '../lib/firebase';
+import { onAuthStateChanged, User } from 'firebase/auth';
 import { 
   Filter, 
   ArrowUpDown, 
@@ -19,13 +21,56 @@ import {
   Check,
   ChevronRight,
   TrendingUp,
-  Award
+  Award,
+  PenTool,
+  Code,
+  Palette,
+  Video,
+  Megaphone,
+  Zap,
+  GraduationCap,
+  MessageSquare,
+  Bookmark
 } from 'lucide-react';
+
+// Helper for category-specific tag display names
+const getCategoryDisplayName = (id: string, name: string) => {
+  if (id === 'design') return 'Image Gen & Design';
+  if (id === 'coding') return 'Coding & Dev';
+  if (id === 'writing') return 'Writing & Copy';
+  return name;
+};
+
+// Helper for rendering category icons
+const renderCategoryIcon = (iconName: string, className: string = "h-4 w-4") => {
+  switch (iconName) {
+    case 'PenTool': return <PenTool className={className} />;
+    case 'Code': return <Code className={className} />;
+    case 'Palette': return <Palette className={className} />;
+    case 'Video': return <Video className={className} />;
+    case 'Megaphone': return <Megaphone className={className} />;
+    case 'Zap': return <Zap className={className} />;
+    case 'Search': return <Search className={className} />;
+    case 'GraduationCap': return <GraduationCap className={className} />;
+    case 'TrendingUp': return <TrendingUp className={className} />;
+    case 'MessageSquare': return <MessageSquare className={className} />;
+    default: return <Sparkles className={className} />;
+  }
+};
 
 export default function SearchResultsView() {
   const { route, navigate } = useRouter();
   const tools = useMemo(() => dbService.getTools(), []);
   const categories = useMemo(() => dbService.getCategories(), []);
+
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: tools.length };
+    tools.forEach(tool => {
+      const cat = tool.category.toLowerCase();
+      counts[cat] = (counts[cat] || 0) + 1;
+    });
+    return counts;
+  }, [tools]);
 
   // UI States
   const [searchQuery, setSearchQuery] = useState(route.params.query || '');
@@ -36,13 +81,61 @@ export default function SearchResultsView() {
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<string>('trending'); // trending, popular, newest, alphabetic
 
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [bookmarkedSlugs, setBookmarkedSlugs] = useState<string[]>([]);
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, async (usr) => {
+      setCurrentUser(usr);
+      if (usr) {
+        try {
+          const list = await dbService.getBookmarks(usr.uid);
+          setBookmarkedSlugs(list);
+        } catch (e) {
+          console.warn('Could not sync user bookmarks lists:', e);
+        }
+      } else {
+        setBookmarkedSlugs([]);
+      }
+    });
+    return () => unsub();
+  }, []);
+
+  const handleToggleCardBookmark = async (e: React.MouseEvent, slug: string) => {
+    e.stopPropagation(); // Avoid card click navigation
+    if (!currentUser) {
+      if (confirm('Create a free account or Sign In with Google to save AI tools to your collection.')) {
+        try {
+          const res = await dbService.loginWithGoogle();
+          if (res.user) {
+            const added = await dbService.toggleBookmark(res.user.uid, slug);
+            setBookmarkedSlugs(prev => added ? [...prev, slug] : prev.filter(s => s !== slug));
+          }
+        } catch (err: any) {
+          alert(`Login failed: ${err.message || err}`);
+        }
+      }
+      return;
+    }
+    try {
+      const added = await dbService.toggleBookmark(currentUser.uid, slug);
+      setBookmarkedSlugs(prev => added ? [...prev, slug] : prev.filter(s => s !== slug));
+    } catch (err) {
+      alert('Action could not complete. Check your network.');
+    }
+  };
+
   // Update component query if URL changes
   useEffect(() => {
     if (route.params.query !== undefined) {
       setSearchQuery(route.params.query);
+    } else {
+      setSearchQuery('');
     }
     if (route.params.category !== undefined) {
       setSelectedCategory(route.params.category);
+    } else {
+      setSelectedCategory('all');
     }
   }, [route.params.query, route.params.category]);
 
@@ -133,13 +226,13 @@ export default function SearchResultsView() {
     // 1. Text Search query (filtering on name, description, category, and tags)
     const baseQuery = parsedSearch.query.replace(/(free tools|chatgpt alternative|coding assistant|create logo|write blog|make ppt|create video|marketer|student|recruiter|designer|founder)/g, '').trim();
 
-    if (parsedSearch.query) {
+    if (baseQuery) {
       result = result.filter(tool => {
-        const nameMatch = tool.name.toLowerCase().includes(parsedSearch.query);
-        const descMatch = tool.description.toLowerCase().includes(parsedSearch.query);
-        const tagMatch = tool.tags.some(t => t.toLowerCase().includes(parsedSearch.query));
-        const catMatch = tool.category.toLowerCase().includes(parsedSearch.query);
-        const bestMatch = tool.bestFor.toLowerCase().includes(parsedSearch.query);
+        const nameMatch = tool.name?.toLowerCase().includes(baseQuery) ?? false;
+        const descMatch = tool.description?.toLowerCase().includes(baseQuery) ?? false;
+        const tagMatch = tool.tags?.some(t => t.toLowerCase().includes(baseQuery)) ?? false;
+        const catMatch = tool.category?.toLowerCase().includes(baseQuery) ?? false;
+        const bestMatch = tool.bestFor?.toLowerCase().includes(baseQuery) ?? false;
         
         return nameMatch || descMatch || tagMatch || catMatch || bestMatch;
       });
@@ -180,6 +273,7 @@ export default function SearchResultsView() {
 
   const handleSearchFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    navigate('search', { query: searchQuery.trim() });
   };
 
   const handleCompareClick = (toolSlug: string) => {
@@ -203,15 +297,29 @@ export default function SearchResultsView() {
         </div>
 
         {/* Live Top Search Input */}
-        <form onSubmit={handleSearchFormSubmit} className="relative w-full max-w-sm">
-          <input
-            type="text"
-            placeholder="Search matching tools..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-white border border-slate-200 text-slate-800 pl-10 pr-4 py-2.5 rounded-xl focus:border-indigo-500 focus:outline-none placeholder:text-slate-400 text-sm shadow-xs"
-          />
-          <Search className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
+        <form onSubmit={handleSearchFormSubmit} className="relative w-full max-w-sm flex items-center gap-2">
+          <div className="relative flex-1">
+            <input
+              type="text"
+              placeholder="Search matching tools..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-white border border-slate-200 text-slate-800 pl-10 pr-4 py-2.5 rounded-xl focus:border-indigo-500 focus:outline-none placeholder:text-slate-400 text-sm shadow-xs"
+            />
+            <button
+              type="submit"
+              className="absolute left-3.5 top-3.5 text-slate-400 hover:text-indigo-650 transition-colors flex items-center justify-center"
+              title="Submit search"
+            >
+              <Search className="h-4 w-4" />
+            </button>
+          </div>
+          <button
+            type="submit"
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2.5 rounded-xl text-xs transition-all shadow-md active:scale-95 shrink-0"
+          >
+            Search
+          </button>
         </form>
       </div>
 
@@ -260,20 +368,73 @@ export default function SearchResultsView() {
 
             {/* Category selection */}
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">
-                Category
-              </label>
-              <select
-                value={parsedSearch.categoryOverride || selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                disabled={!!parsedSearch.categoryOverride}
-                className="w-full bg-slate-50 border border-slate-200 text-slate-700 text-xs py-2 px-3 rounded-lg focus:bg-white focus:border-indigo-500 focus:outline-none disabled:opacity-50"
-              >
-                <option value="all">All Categories</option>
-                {categories.map(cat => (
-                  <option key={cat.id} value={cat.id}>{cat.name}</option>
-                ))}
-              </select>
+              <div className="flex items-center justify-between mb-3">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400">
+                  Category Tag Filter
+                </label>
+                {parsedSearch.categoryOverride && (
+                  <span className="text-[9px] bg-indigo-50 text-indigo-700 font-bold px-1.5 py-0.5 rounded border border-indigo-100 flex items-center gap-0.5">
+                    <Sparkles className="h-2.5 w-2.5" /> Smart Focus
+                  </span>
+                )}
+              </div>
+              
+              <div className="space-y-1.5 max-h-[280px] overflow-y-auto pr-1">
+                <button
+                  type="button"
+                  onClick={() => setSelectedCategory('all')}
+                  disabled={!!parsedSearch.categoryOverride}
+                  className={`w-full flex items-center justify-between text-xs py-2 px-3 rounded-xl text-left transition-all border ${
+                    (parsedSearch.categoryOverride || selectedCategory) === 'all'
+                      ? 'bg-indigo-650 text-white border-indigo-600 font-bold shadow-xs'
+                      : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-100 hover:border-slate-200'
+                  } disabled:opacity-50`}
+                >
+                  <span className="flex items-center space-x-2">
+                    <Filter className="h-3.5 w-3.5" />
+                    <span>All Tags</span>
+                  </span>
+                  <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
+                    (parsedSearch.categoryOverride || selectedCategory) === 'all'
+                      ? 'bg-indigo-700 text-white'
+                      : 'bg-slate-200 text-slate-600'
+                  }`}>
+                    {categoryCounts.all || 0}
+                  </span>
+                </button>
+
+                {categories.map(cat => {
+                  const isActive = (parsedSearch.categoryOverride || selectedCategory) === cat.id;
+                  const count = categoryCounts[cat.id.toLowerCase()] || 0;
+                  const displayName = getCategoryDisplayName(cat.id, cat.name);
+                  
+                  return (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => setSelectedCategory(cat.id)}
+                      disabled={!!parsedSearch.categoryOverride}
+                      className={`w-full flex items-center justify-between text-xs py-2 px-3 rounded-xl text-left transition-all border ${
+                        isActive
+                          ? 'bg-indigo-600 text-white border-indigo-600 font-extrabold shadow-xs'
+                          : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-100 hover:border-slate-200'
+                      } disabled:opacity-50`}
+                    >
+                      <span className="flex items-center space-x-2">
+                        {renderCategoryIcon(cat.icon, `h-3.5 w-3.5 ${isActive ? 'text-white' : 'text-indigo-500'}`)}
+                        <span className="truncate">{displayName}</span>
+                      </span>
+                      <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
+                        isActive
+                          ? 'bg-indigo-700 text-white'
+                          : 'bg-slate-200 text-slate-600'
+                      }`}>
+                        {count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             {/* Pricing checkboxes */}
@@ -378,8 +539,18 @@ export default function SearchResultsView() {
               {filteredTools.map((tool) => (
                 <div
                   key={tool.id}
-                  className="group bg-white hover:shadow-xl hover:shadow-indigo-500/10 border border-slate-150 hover:border-indigo-200 rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.015] active:scale-[0.985] flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-sm"
+                  className="group bg-white hover:shadow-xl hover:shadow-indigo-500/10 border border-slate-150 hover:border-indigo-200 rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.015] active:scale-[0.985] flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-sm relative overflow-hidden"
                 >
+                  {/* Floating Bookmark Button */}
+                  <button
+                    type="button"
+                    onClick={(e) => handleToggleCardBookmark(e, tool.slug)}
+                    className="absolute top-4 right-4 p-2 rounded-xl text-slate-300 hover:text-rose-500 hover:bg-rose-100 transition-all z-10 bg-slate-50 border border-slate-200"
+                    title={bookmarkedSlugs.includes(tool.slug) ? "Remove Bookmark" : "Save / Bookmark tool"}
+                  >
+                    <Bookmark className={`h-4 w-4 ${bookmarkedSlugs.includes(tool.slug) ? 'fill-rose-500 text-rose-500' : 'text-slate-400'}`} />
+                  </button>
+
                   {/* Tool Metadata */}
                   <div className="flex items-start space-x-4 flex-1">
                     <div className={`h-14 w-14 shrink-0 rounded-xl flex items-center justify-center font-black text-xl text-white shadow-md ${tool.logo}`}>

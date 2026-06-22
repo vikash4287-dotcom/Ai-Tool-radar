@@ -41,11 +41,12 @@ export function parseHash(hash: string): RouteState {
     return { page: 'home', params: {} };
   }
 
-  const parts = cleanHash.split('/');
+  const [pathPart, queryPart] = cleanHash.split('?');
+  const parts = pathPart.split('/');
   const routeName = parts[0];
+  const searchParams = new URLSearchParams(queryPart || '');
 
   if (routeName === 'search') {
-    const searchParams = new URLSearchParams(parts[1] || '');
     return {
       page: 'search',
       params: { query: searchParams.get('q') || '' }

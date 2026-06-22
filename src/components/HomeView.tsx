@@ -126,7 +126,7 @@ export default function HomeView() {
               className="w-full bg-slate-50 text-slate-800 pl-12 pr-4 py-4 rounded-2xl border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none placeholder:text-slate-400 text-sm shadow-sm"
               id="main-home-search"
             />
-            <Search className="absolute left-4 top-4.5 h-5 w-5 text-slate-400" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
           </div>
           <button
             type="submit"
