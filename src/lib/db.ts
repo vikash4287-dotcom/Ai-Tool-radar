@@ -653,5 +653,21 @@ export const dbService = {
       handleFirestoreError(error, OperationType.WRITE, `bookmarks/${bookmarkId}`);
       throw error;
     }
+  },
+
+  // Save newsletter subscriber
+  async subscribeNewsletter(email: string): Promise<void> {
+    const subscriberId = email.toLowerCase().replace(/[^a-z0-9]/g, '_');
+    const docRef = doc(db, 'subscribers', subscriberId);
+    try {
+      await setDoc(docRef, {
+        email,
+        subscribedAt: new Date().toISOString(),
+        active: true
+      });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, `subscribers/${subscriberId}`);
+      throw error;
+    }
   }
 };

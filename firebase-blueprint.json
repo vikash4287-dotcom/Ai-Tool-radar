@@ -69,6 +69,17 @@
         "createdAt": { "type": "string" }
       },
       "required": ["userId", "toolSlug", "createdAt"]
+    },
+    "Subscriber": {
+      "title": "Newsletter Subscriber",
+      "description": "Represents a user registered to receive weekly newsletters.",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "subscribedAt": { "type": "string" },
+        "active": { "type": "boolean" }
+      },
+      "required": ["email", "subscribedAt", "active"]
     }
   },
   "firestore": {
@@ -87,6 +98,10 @@
     "bookmarks/{bookmarkId}": {
       "schema": "UserBookmark",
       "description": "Saves bookmarked tools for a user."
+    },
+    "subscribers/{subscriberId}": {
+      "schema": "Subscriber",
+      "description": "Saves newsletter subscribers email addresses."
     }
   }
 }

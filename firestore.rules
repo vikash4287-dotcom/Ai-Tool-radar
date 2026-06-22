@@ -84,6 +84,12 @@ service cloud.firestore {
         && data.toolSlug is string && data.toolSlug.size() <= 200;
     }
 
+    function isValidSubscriber(data) {
+      return data.email is string && data.email.size() <= 254 && data.email.matches('^[^@]+@[^@]+\\.[^@]+$')
+        && data.subscribedAt is string && data.subscribedAt.size() <= 100
+        && data.get('active', true) is bool;
+    }
+
     // --- Collection Routes Matching Rules ---
 
     // 1. AI Tools Collection
@@ -130,6 +136,12 @@ service cloud.firestore {
     match /admins/{adminId} {
       allow read: if isVerifiedUser() && request.auth.uid == adminId;
       allow write: if false; // System bootstrapped registry
+    }
+
+    // 6. Newsletter Subscribers Collection
+    match /subscribers/{subscriberId} {
+      allow create: if isValidId(subscriberId) && isValidSubscriber(incoming());
+      allow read, update, delete: if isAdmin();
     }
   }
 }

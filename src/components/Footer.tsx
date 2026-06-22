@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from '../lib/router';
-import { safeLocalStorage } from '../lib/db';
+import { safeLocalStorage, dbService } from '../lib/db';
 import { Sparkles, Calendar, Github, Heart, Mail, Check, Loader2, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -43,15 +43,15 @@ export default function Footer() {
 
     setIsSubmitting(true);
 
-    // Simulate standard fast-responding server submission
-    await new Promise(resolve => setTimeout(resolve, 800));
-
     try {
+      // Persist the subscription directly to Firestore collection
+      await dbService.subscribeNewsletter(email);
       safeLocalStorage.setItem('ai_radar_newsletter_email', email);
       setSubscribedEmail(email);
       setEmail('');
-    } catch (err) {
-      setError('Unable to store preferences. Local storage disabled.');
+    } catch (err: any) {
+      console.error('Newsletter signup error:', err);
+      setError('Registration failed. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
