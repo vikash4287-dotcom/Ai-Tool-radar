@@ -80,6 +80,7 @@ export default function SearchResultsView() {
   ]);
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<string>('trending'); // trending, popular, newest, alphabetic
+  const [minViews, setMinViews] = useState<number>(0);
 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [bookmarkedSlugs, setBookmarkedSlugs] = useState<string[]>([]);
@@ -160,55 +161,69 @@ export default function SearchResultsView() {
     let categoryOverride: string | null = null;
     let pricingOverride: string[] | null = null;
 
-    // Intent check: Free tools
-    if (q.includes('free') || q.includes('zero cost') || q.includes('unpaid')) {
+    // Explicit suggestions / Problem checks
+    if (q.includes('instagram reels') || q.includes('instagram reel') || q.includes('reels') || q.includes('reel') || q.includes('instagram')) {
+      intentNote = 'Matched Action: Creating viral Instagram Reels & short-form video. Focus: Video category.';
+      categoryOverride = 'video';
+    } else if (q.includes('student') || q.includes('students') || q.includes('homework') || q.includes('academic') || q.includes('education') || q.includes('academia')) {
+      intentNote = 'Tailored for Students: Showing tutoring, specialized subjects, study companions, and academic citation assistants.';
+      categoryOverride = 'education';
+    } else if (q.includes('image generator') || q.includes('photo generator') || q.includes('generate image') || q.includes('make image')) {
+      intentNote = 'Matched Problem: Visual graphic composition & AI image generation. Focus: Design category.';
+      categoryOverride = 'design';
+      if (q.includes('free')) {
+        pricingOverride = ['Free', 'Freemium'];
+      }
+    } else if (q.includes('free') || q.includes('zero cost') || q.includes('unpaid')) {
+      // Intent check: Free tools
       intentNote = 'Filtering by Free & Freemium pricing models. ';
       pricingOverride = ['Free', 'Freemium'];
     }
 
     // Intent check: ChatGPT Alternatives
-    if (q.includes('chatgpt alternative') || q.includes('chatgpt alt') || q.includes('claude alternative')) {
+    if (!categoryOverride && (q.includes('chatgpt alternative') || q.includes('chatgpt alt') || q.includes('claude alternative'))) {
       intentNote = 'Showing writing assistants and LLM conversational alternatives. ';
       categoryOverride = 'writing';
     }
 
     // Intent check: coding assistants
-    if (q.includes('coding assistant') || q.includes('code tool') || q.includes('write code')) {
+    if (!categoryOverride && (q.includes('coding assistant') || q.includes('code tool') || q.includes('write code'))) {
       intentNote = 'Showing specialized AI compilers & code editors. ';
       categoryOverride = 'coding';
     }
 
     // Problem-based searches
-    if (q.includes('create logo') || q.includes('logo') || q.includes('make banner') || q.includes('graphics')) {
-      intentNote = 'Matched Problem: Graphic and logo generation. Focus: Design category.';
-      categoryOverride = 'design';
-    } else if (q.includes('write blog') || q.includes('blog editor') || q.includes('essay assistant') || q.includes('write article')) {
-      intentNote = 'Matched Problem: Content writing and editing. Focus: Writing category.';
-      categoryOverride = 'writing';
-    } else if (q.includes('make ppt') || q.includes('presentation') || q.includes('slides creator') || q.includes('pitch deck')) {
-      intentNote = 'Matched Problem: Crafting decks and agendas. Focus: Productivity category.';
-      categoryOverride = 'productivity';
-    } else if (q.includes('create video') || q.includes('video editor') || q.includes('make animation') || q.includes('avatar generator')) {
-      intentNote = 'Matched Problem: Creating and scaling video assets. Focus: Video category.';
-      categoryOverride = 'video';
+    if (!categoryOverride) {
+      if (q.includes('create logo') || q.includes('logo') || q.includes('make banner') || q.includes('graphics')) {
+        intentNote = 'Matched Problem: Graphic and logo generation. Focus: Design category.';
+        categoryOverride = 'design';
+      } else if (q.includes('write blog') || q.includes('blog editor') || q.includes('essay assistant') || q.includes('write article')) {
+        intentNote = 'Matched Problem: Content writing and editing. Focus: Writing category.';
+        categoryOverride = 'writing';
+      } else if (q.includes('make ppt') || q.includes('presentation') || q.includes('slides creator') || q.includes('pitch deck')) {
+        intentNote = 'Matched Problem: Crafting decks and agendas. Focus: Productivity category.';
+        categoryOverride = 'productivity';
+      } else if (q.includes('create video') || q.includes('video editor') || q.includes('make animation') || q.includes('avatar generator')) {
+        intentNote = 'Matched Problem: Creating and scaling video assets. Focus: Video category.';
+        categoryOverride = 'video';
+      }
     }
 
     // Profession-based searches
-    if (q.includes('marketer') || q.includes('marketing specialist') || q.includes('social media manager')) {
-      intentNote = 'Tailored for Marketers: Showing SEO, copywriting, and growth campaign managers.';
-      categoryOverride = 'marketing';
-    } else if (q.includes('student') || q.includes('homework helper') || q.includes('academia') || q.includes('thesis analyzer')) {
-      intentNote = 'Tailored for Students: Showing tutoring, study bots, and citation extractors.';
-      categoryOverride = 'research';
-    } else if (q.includes('recruiter') || q.includes('hiring manager') || q.includes('hr lead')) {
-      intentNote = 'Tailored for HR / Recruiters: Showing lead enrichment and sequencing platforms.';
-      categoryOverride = 'sales';
-    } else if (q.includes('designer') || q.includes('illustrator') || q.includes('ui builder')) {
-      intentNote = 'Tailored for Designers: Showing vector styling and graphic composition products.';
-      categoryOverride = 'design';
-    } else if (q.includes('founder') || q.includes('startup lead') || q.includes('indie developer')) {
-      intentNote = 'Tailored for Founders: Showing pitch decks, automations, and quick MVPs.';
-      categoryOverride = 'productivity';
+    if (!categoryOverride) {
+      if (q.includes('marketer') || q.includes('marketing specialist') || q.includes('social media manager')) {
+        intentNote = 'Tailored for Marketers: Showing SEO, copywriting, and growth campaign managers.';
+        categoryOverride = 'marketing';
+      } else if (q.includes('recruiter') || q.includes('hiring manager') || q.includes('hr lead')) {
+        intentNote = 'Tailored for HR / Recruiters: Showing lead enrichment and sequencing platforms.';
+        categoryOverride = 'sales';
+      } else if (q.includes('designer') || q.includes('illustrator') || q.includes('ui builder')) {
+        intentNote = 'Tailored for Designers: Showing vector styling and graphic composition products.';
+        categoryOverride = 'design';
+      } else if (q.includes('founder') || q.includes('startup lead') || q.includes('indie developer')) {
+        intentNote = 'Tailored for Founders: Showing pitch decks, automations, and quick MVPs.';
+        categoryOverride = 'productivity';
+      }
     }
 
     return {
@@ -224,10 +239,16 @@ export default function SearchResultsView() {
     let result = [...tools];
 
     // 1. Text Search query (filtering on name, description, category, and tags)
-    const baseQuery = parsedSearch.query.replace(/(free tools|chatgpt alternative|coding assistant|create logo|write blog|make ppt|create video|marketer|student|recruiter|designer|founder)/g, '').trim();
+    const baseQuery = parsedSearch.query
+      .replace(/(create instagram reels|instagram reels|instagram reel|instagram|reels|reel|short video)/g, '')
+      .replace(/(ai for students|students|student|education|academic)/g, '')
+      .replace(/(free tools|chatgpt alternative|coding assistant|create logo|write blog|make ppt|create video|marketer|recruiter|designer|founder)/g, '')
+      .replace(/\b(ai|for|to|best|the|is|a)\b/g, '')
+      .trim();
 
     if (baseQuery) {
-      result = result.filter(tool => {
+      // First try exact substring match
+      const exactFiltered = result.filter(tool => {
         const nameMatch = tool.name?.toLowerCase().includes(baseQuery) ?? false;
         const descMatch = tool.description?.toLowerCase().includes(baseQuery) ?? false;
         const tagMatch = tool.tags?.some(t => t.toLowerCase().includes(baseQuery)) ?? false;
@@ -236,6 +257,26 @@ export default function SearchResultsView() {
         
         return nameMatch || descMatch || tagMatch || catMatch || bestMatch;
       });
+
+      if (exactFiltered.length > 0) {
+        result = exactFiltered;
+      } else {
+        // Fallback to token keyword matching
+        const tokens = baseQuery.split(/\s+/).filter(tok => tok.length > 2 && !['and', 'for', 'the', 'with', 'tools', 'tool', 'free'].includes(tok));
+        if (tokens.length > 0) {
+          result = result.filter(tool => {
+            return tokens.some(tok => {
+              const nameMatch = tool.name?.toLowerCase().includes(tok) ?? false;
+              const descMatch = tool.description?.toLowerCase().includes(tok) ?? false;
+              const tagMatch = tool.tags?.some(t => t.toLowerCase().includes(tok)) ?? false;
+              const catMatch = tool.category?.toLowerCase().includes(tok) ?? false;
+              const bestMatch = tool.bestFor?.toLowerCase().includes(tok) ?? false;
+              
+              return nameMatch || descMatch || tagMatch || catMatch || bestMatch;
+            });
+          });
+        }
+      }
     }
 
     // 2. Category Filter (respect URL state or smart override)
@@ -257,7 +298,12 @@ export default function SearchResultsView() {
       );
     }
 
-    // 5. Sorting
+    // 5. Popularity Views Filter
+    if (minViews > 0) {
+      result = result.filter(tool => (tool.views || 0) >= minViews);
+    }
+
+    // 6. Sorting
     if (sortBy === 'trending') {
       result.sort((a, b) => b.trendingScore - a.trendingScore);
     } else if (sortBy === 'popular') {
@@ -269,7 +315,7 @@ export default function SearchResultsView() {
     }
 
     return result;
-  }, [tools, parsedSearch, selectedCategory, selectedPricing, selectedFeatures, sortBy]);
+  }, [tools, parsedSearch, selectedCategory, selectedPricing, selectedFeatures, sortBy, minViews]);
 
   const handleSearchFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -344,22 +390,23 @@ export default function SearchResultsView() {
         {/* Sidebar Filters */}
         <aside className="w-full lg:w-64 shrink-0 space-y-6">
           
-          <div className="p-5 bg-white border border-slate-100 rounded-2xl space-y-6 shadow-xs">
+          <div className="p-5 bg-white border border-slate-100 rounded-3xl space-y-6 shadow-sm">
             
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <span className="font-bold text-slate-800 text-sm flex items-center space-x-1.5">
+              <span className="font-bold text-slate-850 text-sm flex items-center space-x-2">
                 <SlidersHorizontal className="h-4 w-4 text-indigo-600" />
-                <span>Filters</span>
+                <span>Refine Search</span>
               </span>
-              {(selectedCategory !== 'all' || selectedPricing.length > 0 || selectedFeatures.length > 0) && (
+              {(selectedCategory !== 'all' || selectedPricing.length > 0 || selectedFeatures.length > 0 || minViews > 0) && (
                 <button
                   onClick={() => {
                     setSelectedCategory('all');
                     setSelectedPricing([]);
                     setSelectedFeatures([]);
+                    setMinViews(0);
                     setSearchQuery('');
                   }}
-                  className="text-[10px] text-rose-500 hover:text-rose-600 font-bold"
+                  className="text-[10px] text-rose-500 hover:text-rose-650 font-bold transition-all cursor-pointer"
                 >
                   Clear All
                 </button>
@@ -369,12 +416,12 @@ export default function SearchResultsView() {
             {/* Category selection */}
             <div>
               <div className="flex items-center justify-between mb-3">
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400">
-                  Category Tag Filter
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-400">
+                  Categories
                 </label>
                 {parsedSearch.categoryOverride && (
-                  <span className="text-[9px] bg-indigo-50 text-indigo-700 font-bold px-1.5 py-0.5 rounded border border-indigo-100 flex items-center gap-0.5">
-                    <Sparkles className="h-2.5 w-2.5" /> Smart Focus
+                  <span className="text-[9px] bg-indigo-50 text-indigo-700 font-semibold px-2 py-0.5 rounded-full border border-indigo-100 flex items-center gap-0.5">
+                    <Sparkles className="h-2.5 w-2.5 animate-pulse" /> Focus Linked
                   </span>
                 )}
               </div>
@@ -384,19 +431,19 @@ export default function SearchResultsView() {
                   type="button"
                   onClick={() => setSelectedCategory('all')}
                   disabled={!!parsedSearch.categoryOverride}
-                  className={`w-full flex items-center justify-between text-xs py-2 px-3 rounded-xl text-left transition-all border ${
+                  className={`w-full flex items-center justify-between text-xs py-2 px-3 rounded-xl text-left transition-all border cursor-pointer ${
                     (parsedSearch.categoryOverride || selectedCategory) === 'all'
-                      ? 'bg-indigo-650 text-white border-indigo-600 font-bold shadow-xs'
-                      : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-100 hover:border-slate-200'
+                      ? 'bg-indigo-600 text-white border-indigo-600 font-bold shadow-sm'
+                      : 'bg-slate-50 hover:bg-slate-150 text-slate-700 border-slate-100 hover:border-slate-200'
                   } disabled:opacity-50`}
                 >
                   <span className="flex items-center space-x-2">
-                    <Filter className="h-3.5 w-3.5" />
-                    <span>All Tags</span>
+                    <Filter className="h-3.5 w-3.5 shrink-0" />
+                    <span>All Sectors</span>
                   </span>
                   <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
                     (parsedSearch.categoryOverride || selectedCategory) === 'all'
-                      ? 'bg-indigo-700 text-white'
+                      ? 'bg-indigo-750 text-white'
                       : 'bg-slate-200 text-slate-600'
                   }`}>
                     {categoryCounts.all || 0}
@@ -414,17 +461,17 @@ export default function SearchResultsView() {
                       type="button"
                       onClick={() => setSelectedCategory(cat.id)}
                       disabled={!!parsedSearch.categoryOverride}
-                      className={`w-full flex items-center justify-between text-xs py-2 px-3 rounded-xl text-left transition-all border ${
+                      className={`w-full flex items-center justify-between text-xs py-2 px-3 rounded-xl text-left transition-all border cursor-pointer ${
                         isActive
-                          ? 'bg-indigo-600 text-white border-indigo-600 font-extrabold shadow-xs'
-                          : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-100 hover:border-slate-200'
+                          ? 'bg-indigo-600 text-white border-indigo-600 font-extrabold shadow-sm'
+                          : 'bg-slate-50 hover:bg-slate-150 text-slate-700 border-slate-100 hover:border-slate-200'
                       } disabled:opacity-50`}
                     >
-                      <span className="flex items-center space-x-2">
-                        {renderCategoryIcon(cat.icon, `h-3.5 w-3.5 ${isActive ? 'text-white' : 'text-indigo-500'}`)}
+                      <span className="flex items-center space-x-2 truncate">
+                        {renderCategoryIcon(cat.icon, `h-3.5 w-3.5 shrink-0 ${isActive ? 'text-white' : 'text-indigo-500'}`)}
                         <span className="truncate">{displayName}</span>
                       </span>
-                      <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
+                      <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
                         isActive
                           ? 'bg-indigo-700 text-white'
                           : 'bg-slate-200 text-slate-600'
@@ -438,29 +485,102 @@ export default function SearchResultsView() {
             </div>
 
             {/* Pricing checkboxes */}
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">
+            <div className="pt-4 border-t border-slate-100">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
                 Pricing Model
               </label>
-              <div className="space-y-2 text-xs">
-                {['Free', 'Freemium', 'Paid'].map(price => (
-                  <label key={price} className="flex items-center space-x-2.5 text-slate-600 cursor-pointer hover:text-indigo-600 transition-colors">
-                    <input
-                      type="checkbox"
-                      checked={selectedPricing.includes(price)}
-                      onChange={() => togglePricing(price)}
-                      className="rounded bg-slate-50 border-slate-200 text-indigo-600 focus:ring-0"
-                    />
-                    <span>{price}</span>
-                  </label>
-                ))}
+              <div className="space-y-2.5 text-xs">
+                {[
+                  { value: 'Free', label: 'Free Only', color: 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' },
+                  { value: 'Freemium', label: 'Freemium / Hybrid', color: 'bg-sky-50 text-sky-700 hover:bg-sky-100' },
+                  { value: 'Paid', label: 'Paid / Pro Plans', color: 'bg-rose-50 text-rose-700 hover:bg-rose-100' }
+                ].map(price => {
+                  const isChecked = selectedPricing.includes(price.value);
+                  return (
+                    <label 
+                      key={price.value} 
+                      className={`flex items-center justify-between p-2 rounded-xl border transition-all cursor-pointer ${
+                        isChecked 
+                          ? 'bg-indigo-50 border-indigo-200 text-indigo-900 font-medium' 
+                          : 'bg-slate-55 hover:bg-slate-100 border-transparent text-slate-600'
+                      }`}
+                    >
+                      <div className="flex items-center space-x-2.5">
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => togglePricing(price.value)}
+                          className="rounded bg-slate-55 border-slate-200 text-indigo-600 focus:ring-0 cursor-pointer"
+                        />
+                        <span>{price.value}</span>
+                      </div>
+                      <span className={`text-[9px] px-1.5 py-0.5 rounded font-mono ${price.color}`}>
+                        {price.value === 'Free' ? 'Free' : price.value === 'Freemium' ? 'Try' : 'Buy'}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Popularity Range / Filters */}
+            <div className="pt-4 border-t border-slate-100">
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-400">
+                  Popularity Level
+                </label>
+                <span className="text-[10px] font-mono font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">
+                  {minViews === 0 ? 'Any Viewcount' : `${minViews.toLocaleString()}+ views`}
+                </span>
+              </div>
+
+              {/* Slider for precision tuning */}
+              <div className="space-y-3">
+                <input
+                  type="range"
+                  min="0"
+                  max="8000"
+                  step="250"
+                  value={minViews}
+                  onChange={(e) => setMinViews(parseInt(e.target.value, 10))}
+                  className="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                />
+                
+                <div className="flex justify-between text-[9px] text-slate-400 font-mono">
+                  <span>0 (All)</span>
+                  <span>4k views</span>
+                  <span>8k views+</span>
+                </div>
+
+                {/* Micro-Buttons for quick Popularity Tiers */}
+                <div className="grid grid-cols-2 gap-1.5 pt-1">
+                  {[
+                    { value: 0, label: 'Any Traffic' },
+                    { value: 1500, label: 'Emerging (1.5k+)' },
+                    { value: 3500, label: 'Established (3.5k+)' },
+                    { value: 6000, label: 'High Demand (6k+)' }
+                  ].map(preset => (
+                    <button
+                      key={preset.value}
+                      type="button"
+                      onClick={() => setMinViews(preset.value)}
+                      className={`text-[10px] py-1 px-1.5 rounded-lg border font-medium text-center transition-all cursor-pointer ${
+                        minViews === preset.value
+                          ? 'bg-indigo-50 font-bold border-indigo-200 text-indigo-700'
+                          : 'bg-slate-50 hover:bg-slate-100 text-slate-500 border-slate-100 hover:border-slate-200'
+                      }`}
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
             {/* Feature lists checkboxes */}
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">
-                Features
+            <div className="pt-4 border-t border-slate-100">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 block">
+                Features Spec
               </label>
               <div className="space-y-2 text-xs">
                 {['API Available', 'Mobile App', 'Browser Extension', 'Open Source', 'Free Trial'].map(feat => (
@@ -469,7 +589,7 @@ export default function SearchResultsView() {
                       type="checkbox"
                       checked={selectedFeatures.includes(feat)}
                       onChange={() => toggleFeature(feat)}
-                      className="rounded bg-slate-50 border-slate-200 text-indigo-600 focus:ring-0"
+                      className="rounded bg-slate-50 border-slate-200 text-indigo-600 focus:ring-0 cursor-pointer"
                     />
                     <span>{feat}</span>
                   </label>
@@ -479,8 +599,8 @@ export default function SearchResultsView() {
 
             {/* Sorting helper inside Sidebar */}
             <div className="pt-4 border-t border-slate-100">
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">
-                Sort By
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
+                Sort Sequence
               </label>
               <div className="space-y-1.5">
                 {[
@@ -492,14 +612,14 @@ export default function SearchResultsView() {
                   <button
                     key={opt.value}
                     onClick={() => setSortBy(opt.value)}
-                    className={`flex items-center justify-between w-full text-xs py-1.5 px-2.5 rounded-lg text-left transition-all ${
+                    className={`flex items-center justify-between w-full text-xs py-1.5 px-2.5 rounded-lg text-left transition-all cursor-pointer ${
                       sortBy === opt.value
                         ? 'bg-indigo-50 text-indigo-600 border border-indigo-100 font-semibold'
-                        : 'text-slate-500 hover:text-indigo-600 hover:bg-slate-50'
+                        : 'text-slate-500 hover:text-indigo-600 hover:bg-slate-55'
                     }`}
                   >
                     <span>{opt.label}</span>
-                    {sortBy === opt.value && <ChevronRight className="h-3.5 w-3.5 text-indigo-500" />}
+                    {sortBy === opt.value && <ChevronRight className="h-3.5 w-3.5 text-indigo-550" />}
                   </button>
                 ))}
               </div>
@@ -508,7 +628,7 @@ export default function SearchResultsView() {
           </div>
 
           {/* Quick Advert/Promo block */}
-          <div className="p-5 bg-white border border-slate-100 rounded-2xl flex flex-col items-center text-center shadow-xs">
+          <div className="p-5 bg-white border border-slate-100 rounded-3xl flex flex-col items-center text-center shadow-sm">
             <Award className="h-6 w-6 text-indigo-600 mb-2" />
             <h5 className="text-slate-800 font-extrabold text-xs">Radar Sponsored Spot</h5>
             <p className="text-[10px] text-slate-400 mt-1 leading-relaxed">

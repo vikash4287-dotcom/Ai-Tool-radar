@@ -175,7 +175,7 @@ function initializeDatabase() {
     if (existingToolsStr) {
       try {
         const parsed = JSON.parse(existingToolsStr);
-        if (Array.isArray(parsed) && parsed.length < 200) {
+        if (Array.isArray(parsed) && parsed.length < 220) {
           shouldSeed = true; // Auto-upgrade to expanded 220+ high-fidelity tools directory
         }
       } catch (e) {
@@ -250,7 +250,20 @@ export const dbService = {
     if (typeof window === 'undefined') return [];
     try {
       const data = safeLocalStorage.getItem(TOOLS_KEY);
-      return data ? JSON.parse(data) : [];
+      const rawTools = data ? JSON.parse(data) as AITool[] : [];
+      const seenIds = new Set<string>();
+      const seenSlugs = new Set<string>();
+      return rawTools.filter(tool => {
+        if (!tool || !tool.id || !tool.slug) return false;
+        const normalizedId = tool.id.toLowerCase().trim();
+        const normalizedSlug = tool.slug.toLowerCase().trim();
+        if (seenIds.has(normalizedId) || seenSlugs.has(normalizedSlug)) {
+          return false;
+        }
+        seenIds.add(normalizedId);
+        seenSlugs.add(normalizedSlug);
+        return true;
+      });
     } catch (e) {
       console.error('Failed to parse tools', e);
       return [];
@@ -509,7 +522,17 @@ export const dbService = {
     if (typeof window === 'undefined') return [];
     try {
       const data = safeLocalStorage.getItem(CATEGORIES_KEY);
-      return data ? JSON.parse(data) : [];
+      const rawCategories = data ? JSON.parse(data) as Category[] : [];
+      const seen = new Set<string>();
+      return rawCategories.filter(cat => {
+        if (!cat || !cat.id) return false;
+        const normalizedId = cat.id.toLowerCase().trim();
+        if (seen.has(normalizedId)) {
+          return false;
+        }
+        seen.add(normalizedId);
+        return true;
+      });
     } catch (e) {
       return [];
     }
@@ -535,7 +558,17 @@ export const dbService = {
     if (typeof window === 'undefined') return [];
     try {
       const data = safeLocalStorage.getItem(COLLECTIONS_KEY);
-      return data ? JSON.parse(data) : [];
+      const rawCollections = data ? JSON.parse(data) as Collection[] : [];
+      const seen = new Set<string>();
+      return rawCollections.filter(col => {
+        if (!col || !col.id) return false;
+        const normalizedId = col.id.toLowerCase().trim();
+        if (seen.has(normalizedId)) {
+          return false;
+        }
+        seen.add(normalizedId);
+        return true;
+      });
     } catch (e) {
       return [];
     }

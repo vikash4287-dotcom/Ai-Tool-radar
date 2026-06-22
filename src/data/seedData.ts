@@ -689,6 +689,94 @@ export function generateSeedTools(): AITool[] {
     }
   });
 
+  // Specific Tools for Creating Instagram Reels
+  const reelsTools = [
+    { name: 'AutoReels AI', pricing: 'Freemium' as const },
+    { name: 'Virality Reels', pricing: 'Free' as const },
+    { name: 'InstaCut AI', pricing: 'Paid' as const },
+    { name: 'ReelsGen Pro', pricing: 'Freemium' as const },
+    { name: 'ShortBeat AI', pricing: 'Paid' as const },
+    { name: 'ClipRise Studio', pricing: 'Free' as const },
+    { name: 'TrendViral AI', pricing: 'Freemium' as const },
+    { name: 'ReelFlow AI', pricing: 'Paid' as const },
+    { name: 'InstaScript AI', pricing: 'Free' as const },
+    { name: 'CapReels AI', pricing: 'Freemium' as const },
+    { name: 'SnapReel Maker', pricing: 'Paid' as const }
+  ];
+
+  reelsTools.forEach((rt, idx) => {
+    const slug = rt.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    if (!tools.some(t => t.slug === slug)) {
+      tools.push({
+        id: `${slug}-reels-${idx}`,
+        name: rt.name,
+        slug: slug,
+        description: `Create viral Instagram Reels and short-form videos with any assets using ${rt.name}. Auto-generate attractive templates, translate voiceovers, sync with trend beats, and edit captions dynamically.`,
+        category: 'video',
+        pricing: rt.pricing,
+        website: `https://${slug}.com`,
+        logo: getRandomGradient(idx + 101),
+        features: rt.pricing === 'Paid' ? ['API Available', 'Free Trial'] : ['Mobile App', 'Browser Extension'],
+        pros: ['Direct optimization presets for Instagram Reels algorithms', 'Kinetic smart editing engine saves hours of clipping', 'Stunning automatic caption presets'],
+        cons: ['HD downloads require pro levels of pricing subscription models', 'Requires direct account login to auto-schedule posts on Insta'],
+        tags: ['reels', 'instagram', 'instagram reels', 'short video', 'video generator', 'tiktok', 'youtube shorts'],
+        alternatives: ['runway', 'heygen'],
+        views: Math.floor(2500 + Math.random() * 5000),
+        trendingScore: Math.floor(75 + Math.random() * 20),
+        featured: idx % 3 === 0,
+        createdAt: new Date(2026, 5, 1).toISOString(),
+        bestFor: 'Designers, marketers, influencers, and brands looking to scale viral social Reels and TikTok edits.',
+        strengths: 'Outstanding trendy sound library integration and fast cloud-rendering queues.',
+        weaknesses: 'Occasional format conversion quirks when uploading horizontal reference content.',
+        freePlan: rt.pricing !== 'Paid'
+      });
+    }
+  });
+
+  // Specific Tools for Students / Academics
+  const studentTools = [
+    { name: 'StudyBuddy AI', pricing: 'Free' as const },
+    { name: 'HomeWork Hero', pricing: 'Freemium' as const },
+    { name: 'ThesisScribe Pro', pricing: 'Paid' as const },
+    { name: 'GradCheck Advisor', pricing: 'Freemium' as const },
+    { name: 'ClassMate Bot', pricing: 'Free' as const },
+    { name: 'LectuNote Summarizer', pricing: 'Freemium' as const },
+    { name: 'ExamPrep AI', pricing: 'Paid' as const },
+    { name: 'ScholarBot Helper', pricing: 'Free' as const },
+    { name: 'Academix Helper', pricing: 'Freemium' as const },
+    { name: 'Summify Academic', pricing: 'Paid' as const },
+    { name: 'MathSolve Solver', pricing: 'Freemium' as const }
+  ];
+
+  studentTools.forEach((st, idx) => {
+    const slug = st.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    if (!tools.some(t => t.slug === slug)) {
+      tools.push({
+        id: `${slug}-student-${idx}`,
+        name: st.name,
+        slug: slug,
+        description: `Supercharge your grades and master research study workloads with ${st.name}. Solve complex formulas, summarize citations, format research papers, and chat with customized textbook assistants.`,
+        category: 'education',
+        pricing: st.pricing,
+        website: `https://${slug}.com`,
+        logo: getRandomGradient(idx + 202),
+        features: st.pricing === 'Paid' ? ['API Available', 'Free Trial'] : ['Mobile App', 'Browser Extension'],
+        pros: ['Detailed formula explanations and graph visualizers', 'Instant context-grounded PDF summaries and reference finders', 'Auto formats standard academic bibs and footnotes'],
+        cons: ['Explanatory models require dual checking to avoid hallucinated scientific facts', 'Daily question credit thresholds apply in free models'],
+        tags: ['student', 'students', 'education', 'academia', 'study helper', 'homework', 'tutoring', 'citations'],
+        alternatives: ['perplexity', 'quizlet-q-chat'],
+        views: Math.floor(3000 + Math.random() * 5000),
+        trendingScore: Math.floor(70 + Math.random() * 25),
+        featured: idx % 3 === 0,
+        createdAt: new Date(2026, 5, 2).toISOString(),
+        bestFor: 'High school students, college undergraduates, graduate researchers, and educational tutors.',
+        strengths: 'Outstanding deep textbook reference mapping tools and customized subject cards.',
+        weaknesses: 'Some highly specialized doctoral equations still require clear reference submissions.',
+        freePlan: st.pricing !== 'Paid'
+      });
+    }
+  });
+
   return tools;
 }
 

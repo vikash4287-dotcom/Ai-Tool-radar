@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from '../lib/router';
 import { dbService } from '../lib/db';
 import { AITool, Category, Collection } from '../types';
@@ -44,13 +44,52 @@ export default function HomeView() {
   const categories = dbService.getCategories();
   const collections = dbService.getCollections();
 
+  // Dynamic validation filter to hide suggest query strings if they return 0 matching listings
+  const activeSuggestions = useMemo(() => {
+    return SUGGESTIONS.filter(suggestion => {
+      const q = suggestion.toLowerCase().trim();
+      
+      // Determine what category this matches, or use general matching Heuristics
+      let targetCategory = '';
+      if (q.includes('reels') || q.includes('instagram') || q.includes('reel')) {
+        targetCategory = 'video';
+      } else if (q.includes('student') || q.includes('academic') || q.includes('education')) {
+        targetCategory = 'education';
+      } else if (q.includes('coding') || q.includes('code')) {
+        targetCategory = 'coding';
+      } else if (q.includes('writing') || q.includes('chatgpt')) {
+        targetCategory = 'writing';
+      } else if (q.includes('marketing')) {
+        targetCategory = 'marketing';
+      } else if (q.includes('image') || q.includes('design')) {
+        targetCategory = 'design';
+      }
+
+      // Check if there are any tools in this category, or matching the tokens
+      return tools.some(tool => {
+        if (targetCategory && tool.category.toLowerCase() === targetCategory) {
+          return true;
+        }
+        
+        const tokens = q.split(/\s+/).filter(tok => tok.length > 2 && !['create', 'best', 'for', 'free', 'and', 'the', 'with'].includes(tok));
+        if (tokens.length === 0) return true;
+        return tokens.some(tok => 
+          tool.name?.toLowerCase().includes(tok) || 
+          tool.description?.toLowerCase().includes(tok) ||
+          tool.tags?.some(tag => tag.toLowerCase().includes(tok))
+        );
+      });
+    });
+  }, [tools]);
+
   // Rotate suggestions
   useEffect(() => {
+    if (activeSuggestions.length <= 1) return;
     const interval = setInterval(() => {
-      setSuggestionIdx((prev) => (prev + 1) % SUGGESTIONS.length);
+      setSuggestionIdx((prev) => (prev + 1) % activeSuggestions.length);
     }, 3000);
     return () => clearInterval(interval);
-  }, []);
+  }, [activeSuggestions.length]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -138,38 +177,40 @@ export default function HomeView() {
         </form>
 
         {/* Rotating Suggestions */}
-        <div className="mt-6 text-xs text-slate-400 flex flex-wrap justify-center items-center gap-2 px-4 select-none">
-          <span className="font-mono uppercase text-[10px] tracking-wider text-slate-500">Suggestions:</span>
-          
-          <div className="h-6 flex items-center relative overflow-hidden px-1.5 bg-slate-50 border border-slate-100 rounded-lg">
-            <AnimatePresence mode="wait">
-              <motion.button
-                key={suggestionIdx}
-                onClick={() => handleSuggestionClick(SUGGESTIONS[suggestionIdx])}
-                initial={{ y: 15, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: -15, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="text-indigo-600 font-medium hover:text-indigo-700 flex items-center space-x-1 outline-none"
+        {activeSuggestions.length > 0 && (
+          <div className="mt-6 text-xs text-slate-400 flex flex-wrap justify-center items-center gap-2 px-4 select-none">
+            <span className="font-mono uppercase text-[10px] tracking-wider text-slate-500">Suggestions:</span>
+            
+            <div className="h-6 flex items-center relative overflow-hidden px-1.5 bg-slate-50 border border-slate-100 rounded-lg">
+              <AnimatePresence mode="wait">
+                <motion.button
+                  key={suggestionIdx}
+                  onClick={() => handleSuggestionClick(activeSuggestions[suggestionIdx % activeSuggestions.length])}
+                  initial={{ y: 15, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: -15, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="text-indigo-600 font-medium hover:text-indigo-700 flex items-center space-x-1 outline-none"
+                >
+                  <span>{activeSuggestions[suggestionIdx % activeSuggestions.length]}</span>
+                  <MousePointerClick className="h-3 w-3" />
+                </motion.button>
+              </AnimatePresence>
+            </div>
+
+            <span className="text-slate-200">|</span>
+
+            {activeSuggestions.slice(0, 3).map((keyword) => (
+              <button
+                key={keyword}
+                onClick={() => handleSuggestionClick(keyword)}
+                className="hover:text-indigo-600 hover:border-indigo-105 transition-colors bg-slate-50 text-slate-600 px-2.5 py-1 rounded-md border border-slate-100 cursor-pointer"
               >
-                <span>{SUGGESTIONS[suggestionIdx]}</span>
-                <MousePointerClick className="h-3 w-3" />
-              </motion.button>
-            </AnimatePresence>
+                {keyword}
+              </button>
+            ))}
           </div>
-
-          <span className="text-slate-200">|</span>
-
-          {SUGGESTIONS.slice(0, 3).map((keyword) => (
-            <button
-              key={keyword}
-              onClick={() => handleSuggestionClick(keyword)}
-              className="hover:text-indigo-600 hover:border-indigo-105 transition-colors bg-slate-50 text-slate-600 px-2.5 py-1 rounded-md border border-slate-100"
-            >
-              {keyword}
-            </button>
-          ))}
-        </div>
+        )}
       </section>
 
       {/* Trending AI Tools Leaderboard Page Segment */}
