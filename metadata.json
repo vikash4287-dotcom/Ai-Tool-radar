@@ -1,0 +1,6 @@
+{
+  "name": "AI Tools Radar",
+  "description": "Discover the right AI tool in seconds.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

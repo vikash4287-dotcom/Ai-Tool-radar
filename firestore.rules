@@ -1,0 +1,135 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 1. Global Safety Net Catch-All
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Core Reusable Primitive Helpers ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && (request.auth.token.email_verified == true || request.auth.token.firebase.sign_in_provider == 'google.com');
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isAdmin() {
+      return isVerifiedUser() && (
+        request.auth.token.email == "vikash4287@gmail.com" ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // --- Entity Specific Validation Blueprints ---
+
+    function isValidTool(data) {
+      return data.id is string && data.id.size() <= 128
+        && data.name is string && data.name.size() <= 200
+        && data.slug is string && data.slug.size() <= 200
+        && data.description is string && data.description.size() <= 2000
+        && data.category is string && data.category.size() <= 100
+        && data.pricing is string && (data.pricing == 'Free' || data.pricing == 'Freemium' || data.pricing == 'Paid')
+        && data.website is string && data.website.size() <= 500
+        && data.logo is string && data.logo.size() <= 200
+        && data.features is list && data.features.size() <= 25
+        && data.pros is list && data.pros.size() <= 15
+        && data.cons is list && data.cons.size() <= 15
+        && data.tags is list && data.tags.size() <= 25
+        && (data.get('views', 0) is int || data.get('views', 0) is float)
+        && (data.get('trendingScore', 0) is int || data.get('trendingScore', 0) is float)
+        && data.get('featured', false) is bool
+        && data.get('bestFor', '') is string && data.get('bestFor', '').size() <= 1000
+        && data.get('strengths', '') is string && data.get('strengths', '').size() <= 1000
+        && data.get('weaknesses', '') is string && data.get('weaknesses', '').size() <= 1000
+        && data.get('freePlan', false) is bool;
+    }
+
+    function isValidCollection(data) {
+      return data.id is string && data.id.size() <= 128
+        && data.name is string && data.name.size() <= 200
+        && data.slug is string && data.slug.size() <= 200
+        && data.description is string && data.description.size() <= 2000
+        && data.icon is string && data.icon.size() <= 100
+        && data.bestFor is string && data.bestFor.size() <= 1000
+        && data.introduction is string && data.introduction.size() <= 3000
+        && data.get('pros', []) is list && data.get('pros', []).size() <= 10
+        && data.get('cons', []) is list && data.get('cons', []).size() <= 10
+        && data.get('recommendedToolSlug', '') is string && data.get('recommendedToolSlug', '').size() <= 200;
+    }
+
+    function isValidCategory(data) {
+      return data.id is string && data.id.size() <= 128
+        && data.name is string && data.name.size() <= 100
+        && data.icon is string && data.icon.size() <= 100
+        && data.color is string && data.color.size() <= 100;
+    }
+
+    function isValidBookmark(data) {
+      return data.userId == request.auth.uid
+        && data.toolSlug is string && data.toolSlug.size() <= 200;
+    }
+
+    // --- Collection Routes Matching Rules ---
+
+    // 1. AI Tools Collection
+    match /tools/{toolId} {
+      allow read: if true;
+      allow create: if isAdmin() && isValidId(toolId) && isValidTool(incoming());
+      allow delete: if isAdmin() && isValidId(toolId);
+      
+      // Fine-grained action-based or full-range update rules for Admin,
+      // and allow normal visitors or clients to increment page views
+      allow update: if (isAdmin() && isValidId(toolId) && isValidTool(incoming())) || (
+        isSignedIn() && isValidId(toolId) &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['views', 'trendingScore']) &&
+        incoming().views == existing().views + 1
+      );
+    }
+
+    // 2. Curated collections
+    match /collections/{collectionId} {
+      allow read: if true;
+      allow create: if isAdmin() && isValidId(collectionId) && isValidCollection(incoming());
+      allow update: if isAdmin() && isValidId(collectionId) && isValidCollection(incoming());
+      allow delete: if isAdmin() && isValidId(collectionId);
+    }
+
+    // 3. Categories definitions
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow create: if isAdmin() && isValidId(categoryId) && isValidCategory(incoming());
+      allow update: if isAdmin() && isValidId(categoryId) && isValidCategory(incoming());
+      allow delete: if isAdmin() && isValidId(categoryId);
+    }
+
+    // 4. User Bookmark collection
+    match /bookmarks/{bookmarkId} {
+      allow create: if isVerifiedUser() && isValidId(bookmarkId) && isValidBookmark(incoming());
+      // Owner only get & delete
+      allow get, delete: if isVerifiedUser() && isValidId(bookmarkId) && existing().userId == request.auth.uid;
+      // Listing restricted strictly to secure where clause filtering corresponding to current active uid (no blanket reads!)
+      allow list: if isVerifiedUser() && resource.data.userId == request.auth.uid;
+    }
+
+    // 5. System Admins Registry
+    match /admins/{adminId} {
+      allow read: if isVerifiedUser() && request.auth.uid == adminId;
+      allow write: if false; // System bootstrapped registry
+    }
+  }
+}

@@ -1,0 +1,92 @@
+{
+  "entities": {
+    "AITool": {
+      "title": "AI Tool",
+      "description": "Represents an AI tool registered in the platform.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "slug": { "type": "string" },
+        "description": { "type": "string" },
+        "category": { "type": "string" },
+        "pricing": { "type": "string", "enum": ["Free", "Freemium", "Paid"] },
+        "website": { "type": "string" },
+        "logo": { "type": "string" },
+        "features": { "type": "array" },
+        "pros": { "type": "array" },
+        "cons": { "type": "array" },
+        "tags": { "type": "array" },
+        "alternatives": { "type": "array" },
+        "views": { "type": "number" },
+        "trendingScore": { "type": "number" },
+        "featured": { "type": "boolean" },
+        "createdAt": { "type": "string" },
+        "bestFor": { "type": "string" },
+        "strengths": { "type": "string" },
+        "weaknesses": { "type": "string" },
+        "freePlan": { "type": "boolean" }
+      },
+      "required": ["id", "name", "slug", "description", "category", "pricing", "website", "logo", "features", "pros", "cons", "tags"]
+    },
+    "Collection": {
+      "title": "Collection",
+      "description": "A curated collection/bundle of AI tools for a specific use case.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "slug": { "type": "string" },
+        "description": { "type": "string" },
+        "icon": { "type": "string" },
+        "bestFor": { "type": "string" },
+        "introduction": { "type": "string" },
+        "pros": { "type": "array" },
+        "cons": { "type": "array" },
+        "recommendedToolSlug": { "type": "string" }
+      },
+      "required": ["id", "name", "slug", "description", "icon", "bestFor", "introduction"]
+    },
+    "Category": {
+      "title": "Category",
+      "description": "A top-level category of tools.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "icon": { "type": "string" },
+        "color": { "type": "string" }
+      },
+      "required": ["id", "name", "icon", "color"]
+    },
+    "UserBookmark": {
+      "title": "User Bookmark",
+      "description": "Represents a bookmarked tool for a specific user.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "toolSlug": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["userId", "toolSlug", "createdAt"]
+    }
+  },
+  "firestore": {
+    "tools/{toolId}": {
+      "schema": "AITool",
+      "description": "Interactive AI tools repository documents."
+    },
+    "collections/{collectionId}": {
+      "schema": "Collection",
+      "description": "Curated collections of AI tools."
+    },
+    "categories/{categoryId}": {
+      "schema": "Category",
+      "description": "Workspace categories definitions."
+    },
+    "bookmarks/{bookmarkId}": {
+      "schema": "UserBookmark",
+      "description": "Saves bookmarked tools for a user."
+    }
+  }
+}
