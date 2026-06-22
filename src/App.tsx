@@ -13,6 +13,9 @@ import CompareView from './components/CompareView';
 import CollectionsView from './components/CollectionsView';
 import TrendingView from './components/TrendingView';
 import AdminPanelView from './components/AdminPanelView';
+import PrivacyView from './components/PrivacyView';
+import TermsView from './components/TermsView';
+import SupportView from './components/SupportView';
 
 import { RouterContext, parseHash, formatHash, PageType } from './lib/router';
 import { motion, AnimatePresence } from 'motion/react';
@@ -66,6 +69,12 @@ export default function App() {
         return <TrendingView />;
       case 'admin':
         return <AdminPanelView />;
+      case 'privacy':
+        return <PrivacyView />;
+      case 'terms':
+        return <TermsView />;
+      case 'support':
+        return <SupportView />;
       default:
         return <HomeView />;
     }

@@ -218,9 +218,9 @@ export default function Footer() {
             <span>for early builders.</span>
           </div>
           <div className="flex space-x-4">
-            <span className="cursor-not-allowed hover:text-slate-500 transition-all">Privacy Policy</span>
-            <span className="cursor-not-allowed hover:text-slate-500 transition-all">Terms of Service</span>
-            <span className="cursor-not-allowed hover:text-slate-500 transition-all">Contact Support</span>
+            <button onClick={() => navigate('privacy')} className="hover:text-indigo-600 transition-all cursor-pointer">Privacy Policy</button>
+            <button onClick={() => navigate('terms')} className="hover:text-indigo-600 transition-all cursor-pointer">Terms of Service</button>
+            <button onClick={() => navigate('support')} className="hover:text-indigo-600 transition-all cursor-pointer">Contact Support</button>
           </div>
         </div>
 

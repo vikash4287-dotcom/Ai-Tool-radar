@@ -5,7 +5,7 @@
 
 import { useState, useEffect, createContext, useContext } from 'react';
 
-export type PageType = 'home' | 'search' | 'tool' | 'compare' | 'collections' | 'trending' | 'admin';
+export type PageType = 'home' | 'search' | 'tool' | 'compare' | 'collections' | 'trending' | 'admin' | 'privacy' | 'terms' | 'support';
 
 export interface RouteState {
   page: PageType;
@@ -80,6 +80,18 @@ export function parseHash(hash: string): RouteState {
     return { page: 'admin', params: {} };
   }
 
+  if (routeName === 'privacy') {
+    return { page: 'privacy', params: {} };
+  }
+
+  if (routeName === 'terms') {
+    return { page: 'terms', params: {} };
+  }
+
+  if (routeName === 'support') {
+    return { page: 'support', params: {} };
+  }
+
   return { page: 'home', params: {} };
 }
 
@@ -102,6 +114,9 @@ export function formatHash(page: PageType, params?: RouteState['params']): strin
   }
   if (page === 'trending') return '#/trending';
   if (page === 'admin') return '#/admin';
+  if (page === 'privacy') return '#/privacy';
+  if (page === 'terms') return '#/terms';
+  if (page === 'support') return '#/support';
 
   return '#/';
 }
