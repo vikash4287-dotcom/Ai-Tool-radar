@@ -557,18 +557,17 @@ const EXPANSION_PRESETS: { name: string; category: string; pricing: 'Free' | 'Fr
   { name: 'Help Scout AI', category: 'customer support', pricing: 'Paid', features: ['API Available', 'Mobile App'] }
 ];
 
-// Helper to fill the gaps programmatically up to exactly 100 tools using Presets & standard lists
+// Helper to fill the gaps programmatically up to at least 200 tools, ensuring at least 22 tools in each category
 export function generateSeedTools(): AITool[] {
   const tools = [...COVER_TOOLS];
 
-  // We have 15 cover tools, we need 85 more tools to satisfy exactly 100 Tools.
-  // There are 85 presets. Let's merge them!
+  // First, add all expansion presets to tools (giving us ~100 tools)
   EXPANSION_PRESETS.forEach((preset, idx) => {
     const slug = preset.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     
     // Check if slug already exists to prevent duplicate IDs
     const exists = tools.some(t => t.slug === slug);
-    if (!exists && tools.length < 100) {
+    if (!exists) {
       // Calculate realistic metrics
       const views = Math.floor(1000 + Math.random() * 8000);
       const trendingScore = Math.floor(50 + Math.random() * 45);
@@ -609,6 +608,84 @@ export function generateSeedTools(): AITool[] {
         weaknesses: `Initial fine-tuning template creation requires some manual configuration inputs.`,
         freePlan: preset.pricing === 'Free' || preset.pricing === 'Freemium'
       });
+    }
+  });
+
+  // Name pools for each category to reach at least 22 tools in each
+  const pools: Record<string, string[]> = {
+    'writing': ['DraftSmith', 'ProsePilot', 'PenFlow', 'WordWeaver AI', 'InkSpark', 'Ghostwriter Pro', 'ContextBrief', 'Stylus AI', 'NovelFlow', 'GrammarGrid', 'EssayShield', 'EditSage', 'SummarySpark', 'CopyFlow', 'ScriptCrafter', 'PoetMatrix'],
+    'marketing': ['AdGenius', 'CampaignCraft', 'BrandVoice AI', 'SocialSail', 'MarketPulse', 'SEOShield', 'ClickScale', 'Virality AI', 'TargetFlow', 'LeadStream', 'PromoSprout', 'AdRadar', 'AudienceWave', 'BuzzForge', 'CopyScribe', 'ConversionAI'],
+    'design': ['PixelForge', 'CanvasPro AI', 'VividDraw', 'VectorVibe', 'Drafty UI', 'Artistry AI', 'LogoFlow', 'MockupMind', 'PaletteSpark', 'RenderGen', 'StyleShift', 'AssetForge', 'LayerWise', 'TextureGen', 'ColorWave', 'FontPair AI'],
+    'video': ['CineFlow', 'MotionForge', 'ClipShift', 'Director AI', 'CutGenius', 'SceneWeaver', 'FramePulse', 'VidCraft', 'AudioSync AI', 'ReelMax', 'MontageMind', 'Splicer AI', 'B-Roll Engine', 'ScreenCraft', 'LipSync Pro', 'Teleprompt AI'],
+    'coding': ['CodePilot Pro', 'SyntaxSage', 'DevPulse', 'BugShield AI', 'CommitCraft', 'DeployFlow', 'LinterMax', 'RefactorGrid', 'NestJS Copilot', 'DjangoPilot', 'SchemaForge', 'QueryScribe', 'ScriptSprint', 'API-Weaver', 'DockWorker AI', 'TestSpark'],
+    'productivity': ['FocusFlow', 'TaskSync', 'AgendaAI', 'NotesForge', 'CalPilot', 'OrganizePro', 'MeetingMind', 'InboxZero AI', 'DocuStream', 'SlideCraft', 'SheetGrid AI', 'WorkspacePro', 'HabitLoop', 'PriorityWave', 'ReminderAI', 'SyncGrid'],
+    'research': ['ScholarScope', 'CiteWise', 'PaperPilot', 'FactShield AI', 'QueryInsight', 'ConsensusGrid', 'SearchSage', 'DataPrism', 'InsightWave', 'Abstractify', 'SourceCheck', 'Reviewer AI', 'ArchiveScan', 'BiblioForge', 'SynthesisAI', 'CuratorPro'],
+    'education': ['TutorGrid', 'StudyPulse', 'LessonCraft', 'Academia AI', 'QuizWeaver', 'FlashMind', 'Curriculum AI', 'GradeWise', 'LectorPro', 'SolverSpark', 'ScribeStudy', 'EduFlow', 'CognitiveAI', 'Prepper AI', 'SkillUp', 'MentorBot'],
+    'sales': ['LeadPulse', 'DealFlow AI', 'SalesForge', 'ProspectPulse', 'QuoteCraft', 'CloseMax', 'PipelinePro', 'RevenueMind', 'CallWise', 'OutreachAI', 'CRM-Sync', 'B2B-Shield', 'SalesSprint', 'EnrichPro', 'SequenceAI', 'DealScout'],
+    'customer support': ['ReplyWise', 'ChatPulse', 'SupportCore', 'TicketFlow', 'ResolvAI', 'DeskPilot', 'ClientCare', 'AgenticHelp', 'QueueMax', 'QueryShield', 'VoxSupport', 'TriageAI', 'FAQ-Forge', 'AnswerStream', 'AssureBot', 'FeedbackMind']
+  };
+
+  const categoriesList = [
+    'writing', 'marketing', 'design', 'video', 'coding', 
+    'productivity', 'research', 'education', 'sales', 'customer support'
+  ];
+
+  categoriesList.forEach((cat) => {
+    let countInCat = tools.filter(t => t.category === cat).length;
+    let poolIndex = 0;
+    const pool = pools[cat] || [];
+
+    while (countInCat < 22 && poolIndex < pool.length) {
+      const name = pool[poolIndex];
+      const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+
+      // Check if slug already exists to prevent duplicates
+      const exists = tools.some(t => t.slug === slug);
+      if (!exists) {
+        const views = Math.floor(1200 + Math.random() * 4500);
+        const trendingScore = Math.floor(55 + Math.random() * 38);
+        const featured = poolIndex % 6 === 0;
+
+        const randomPros = [
+          `Highly optimized workflows specifically tailored for modern ${cat} operations.`,
+          `Intuitive web workspace with near-instant rendering speeds.`,
+          `Supports bulk operations and comprehensive reporting options.`
+        ];
+        
+        const randomCons = [
+          `Advanced custom integrations require premium subscription options.`,
+          `Slightly higher learning curve for enterprise-level automation configs.`
+        ];
+
+        const pPricing: 'Free' | 'Freemium' | 'Paid' = poolIndex % 3 === 0 ? 'Free' : (poolIndex % 3 === 1 ? 'Freemium' : 'Paid');
+
+        tools.push({
+          id: `${slug}-dyn-${poolIndex}`,
+          name: name,
+          slug: slug,
+          description: `Supercharge your productivity using ${name}, a highly capable AI-driven assistant engineered with state-of-the-art models for automated ${cat} tasks.`,
+          category: cat,
+          pricing: pPricing,
+          website: `https://${slug}.com`,
+          logo: getRandomGradient(poolIndex + 12),
+          features: pPricing === 'Paid' ? ['API Available', 'Free Trial'] : ['Mobile App', 'Browser Extension'],
+          pros: randomPros,
+          cons: randomCons,
+          tags: [cat, 'automation', 'productivity', slug],
+          alternatives: getAlternativesMock(cat, slug),
+          views: views,
+          trendingScore: trendingScore,
+          featured: featured,
+          createdAt: new Date(2026, 4, Math.floor(Math.random() * 28) + 1).toISOString(),
+          bestFor: `Teams and professionals wanting to hyper-automate their daily ${cat} checklists.`,
+          strengths: `State-of-the-art native context awareness and fast-feedback cycles.`,
+          weaknesses: `Localized offline capabilities are still receiving improvements in our active beta.`,
+          freePlan: pPricing !== 'Paid'
+        });
+
+        countInCat++;
+      }
+      poolIndex++;
     }
   });
 

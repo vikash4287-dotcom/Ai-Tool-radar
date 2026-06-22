@@ -170,7 +170,20 @@ if (typeof window !== 'undefined') {
 // 3. Initialize localStorage with static files fallback so UI is immediately hydrated
 function initializeDatabase() {
   if (typeof window !== 'undefined') {
-    if (!safeLocalStorage.getItem(TOOLS_KEY)) {
+    const existingToolsStr = safeLocalStorage.getItem(TOOLS_KEY);
+    let shouldSeed = !existingToolsStr;
+    if (existingToolsStr) {
+      try {
+        const parsed = JSON.parse(existingToolsStr);
+        if (Array.isArray(parsed) && parsed.length < 200) {
+          shouldSeed = true; // Auto-upgrade to expanded 220+ high-fidelity tools directory
+        }
+      } catch (e) {
+        shouldSeed = true;
+      }
+    }
+
+    if (shouldSeed) {
       const initialTools = generateSeedTools();
       safeLocalStorage.setItem(TOOLS_KEY, JSON.stringify(initialTools));
     }
